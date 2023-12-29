@@ -28,13 +28,7 @@ line-length = 100
 indent-width = 4
 
 [tool.ruff.lint]
-extend-select = ["C901", "D", "N", "UP"]
-# On top of the Google convention, disable `D417`, which requires
-# documentation for every function parameter.
-extend-ignore = ["D417"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+extend-select = ["C901", "N", "UP"]
 
 [tool.pytest.ini_options]
 addopts = "-rsx -vv -s"
