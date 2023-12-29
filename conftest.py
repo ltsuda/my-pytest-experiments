@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,40 @@ from slugify import slugify
 log_fullpath = pytest.StashKey[Path]()
 
 
+def prepare_logfile_path(item: Item, path: list[str]) -> Path:
+    """Create logfile full path per test invocation <item>
+
+    Args:
+        item (Item): pytest Item
+        path (list[str]): list of names to create file structure
+
+    Returns:
+        Path: full logfile path
+    """
+    item_path_name = None
+    item_name = slugify(item.name)
+    path_args = path.copy()
+
+    date_formatted = datetime.datetime.today().strftime("%d-%m-%Y %H:%M:%S")
+    date_formatted = slugify(date_formatted)
+
+    path_args.extend([date_formatted, "logs"])
+
+    if item.path:
+        item_path_name = slugify(item.path.name.removesuffix(".py"))
+
+    path_args.append(str(uuid.uuid4()))
+
+    if item_path_name:
+        path_args.pop()
+        path_args.append(item_path_name)
+
+    path_args.append(f"{item_name}.log")
+
+    full_filepath = Path(*path_args)
+    return full_filepath
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_setup(item: Item):
     """Pytest test setup hook
@@ -15,26 +50,15 @@ def pytest_runtest_setup(item: Item):
     Args:
         item (Item): test invocation item
     """
-    # create a logfile per test case
-    item_path_name = None
     config = item.config
+
+    # create logfile per test case
+    file_path = prepare_logfile_path(item, path=["results"])
     logging_plugin = config.pluginmanager.get_plugin("logging-plugin")
-    item_name = slugify(item.name)
-    if item.path:
-        item_path_name = slugify(item.path.name.removesuffix(".py"))
-
-    date_formatted = datetime.datetime.today().strftime("%d-%m-%Y %H:%M:%S")
-    date_slugified = slugify(date_formatted)
-
-    path_args = ["results", date_slugified, "logs"]
-    if item_path_name:
-        path_args.append(item_path_name)
-    path_args.append(f"{item_name}.log")
-
-    file_path = Path(*path_args)
     logging_plugin.set_log_path(file_path)  # pyright: ignore[reportOptionalMemberAccess]
     item.stash[log_fullpath] = file_path
-    # end of create a logfile per test case
+    # end create logfile per test case
+
     yield
 
 
@@ -43,7 +67,11 @@ def pytest_runtest_makereport(item: Item):
     outcome = yield
     result = outcome.get_result()
 
-    item_logfile_path = item.stash[log_fullpath]
+    item_logfile_path: Path = item.stash[log_fullpath]
+    parent_dir = item_logfile_path.parent
+    if parent_dir.is_dir() and not any(parent_dir.iterdir()):
+        parent_dir.rmdir()
+
     if item_logfile_path.exists():
         file = item_logfile_path.resolve()
 
