@@ -18,3 +18,23 @@ pytest = "^7.4.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+indent-width = 4
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.lint]
+extend-select = ["C901", "D", "N", "UP"]
+# On top of the Google convention, disable `D417`, which requires
+# documentation for every function parameter.
+extend-ignore = ["D417"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+addopts = "-rsx -vv -s"
