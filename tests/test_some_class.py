@@ -32,4 +32,4 @@ class TestSomeClass:
         logger.info("hello world")
         logger.info("hello world")
         logger.critical("hello world")
-        assert False
+        assert "Hello" in "hello World testing"

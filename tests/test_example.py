@@ -1,5 +1,7 @@
 import logging
 
+import pytest
+
 logger = logging.getLogger("test_example")
 
 
@@ -19,6 +21,7 @@ def test_example_one():
     assert True
 
 
+@pytest.mark.skip("skipped")
 def test_example_two():
     logger.info("hello world")
     logger.info("hello world")
