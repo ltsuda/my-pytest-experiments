@@ -53,6 +53,7 @@ def pytest_runtest_setup(item: Item):
     config = item.config
 
     # create logfile per test case
+    # https://docs.pytest.org/en/stable/how-to/logging.html#live-logs
     file_path = prepare_logfile_path(item, path=["results"])
     logging_plugin = config.pluginmanager.get_plugin("logging-plugin")
     logging_plugin.set_log_path(file_path)  # pyright: ignore[reportOptionalMemberAccess]
