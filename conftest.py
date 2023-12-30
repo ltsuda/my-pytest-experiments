@@ -7,6 +7,7 @@ from pytest import Item
 from slugify import slugify
 
 log_fullpath = pytest.StashKey[Path]()
+RESULTS_PATH = "results"
 
 
 def prepare_logfile_path(item: Item, path: list[str]) -> Path:
@@ -54,7 +55,7 @@ def pytest_runtest_setup(item: Item):
 
     # create logfile per test case
     # https://docs.pytest.org/en/stable/how-to/logging.html#live-logs
-    file_path = prepare_logfile_path(item, path=["results"])
+    file_path = prepare_logfile_path(item, path=[RESULTS_PATH])
     logging_plugin = config.pluginmanager.get_plugin("logging-plugin")
     logging_plugin.set_log_path(file_path)  # pyright: ignore[reportOptionalMemberAccess]
     item.stash[log_fullpath] = file_path
@@ -63,46 +64,71 @@ def pytest_runtest_setup(item: Item):
     yield
 
 
+def remove_empty_logfile_dir(logfile_path: Path) -> None:
+    """Remove empty parent directory for logfile
+
+    Currently is using when logfile directory's name is an UUID from 'prepare_logfile_path' function
+
+    Args:
+        logfile_path (Path): test log file path
+    """
+    parent_dir = logfile_path.parent
+    if parent_dir.is_dir() and not any(parent_dir.iterdir()):
+        parent_dir.rmdir()
+
+
+def remove_empty_logfile(logfile_path: Path) -> None:
+    """Remove log file if is empty
+
+    Args:
+        logfile_path (Path): test log file path
+    """
+    if not logfile_path.read_text():
+        logfile_path.unlink(missing_ok=True)
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item: Item):
+    """Pytest setup, test and teardown report hook
+
+    Args:
+        item (Item): test invocation item
+    """
     outcome = yield
     result = outcome.get_result()
 
     item_logfile_path: Path = item.stash[log_fullpath]
-    parent_dir = item_logfile_path.parent
-    if parent_dir.is_dir() and not any(parent_dir.iterdir()):
-        parent_dir.rmdir()
+    remove_empty_logfile_dir(item_logfile_path)
 
     if item_logfile_path.exists():
-        file = item_logfile_path.resolve()
+        full_filepath = item_logfile_path.resolve()
 
         if result.skipped:
-            content = file.read_text()
-            if not content:
-                item_logfile_path.unlink(missing_ok=True)
+            remove_empty_logfile(full_filepath)
 
         if result.longrepr and not result.skipped:
-            with open(file, "a") as f:
+            # append failed message representation like AssertionError to respective test log file
+            with open(full_filepath, "a+") as f:
                 f.write(f"{result.longreprtext}\n")
 
-    results_path = Path(item_logfile_path.cwd(), "results")
-    summary_path = Path(results_path, "summary.log")
+    # create summary.log with setup/test/teardown results for all executed test cases
+    result_logs_path = item_logfile_path.parent.parent
+    summary_path = Path(result_logs_path, "summary.log")
     summary_filepath = summary_path.resolve()
 
+    summary_message = f"{item.nodeid}:::{result.outcome.upper()}\n"
     if result.when == "setup":
-        mode = "a" if summary_path.exists() else "w"
-        with open(summary_filepath, mode) as f:
-            f.write(f"SETUP:::{item.nodeid}:::{result.outcome.upper()}\n")
+        with open(summary_filepath, "a+") as f:
+            f.write(f"SETUP:::{summary_message}")
 
             if result.failed:
-                f.write(f"\tTEST:::{item.nodeid}:::{result.outcome.upper()}\n")
+                f.write(f"TEST:::{summary_message}")
 
     if result.when == "call" or result.skipped:
-        mode = "a" if summary_path.exists() else "w"
-        with open(summary_filepath, mode) as f:
-            f.write(f"\tTEST:::{item.nodeid}:::{result.outcome.upper()}\n")
+        with open(summary_filepath, "a+") as f:
+            f.write(f"TEST:::{summary_message}")
 
     if result.when == "teardown":
-        mode = "a" if summary_path.exists() else "w"
-        with open(summary_filepath, mode) as f:
-            f.write(f"TEARDOWN:::{item.nodeid}:::{result.outcome.upper()}\n")
+        with open(summary_filepath, "a+") as f:
+            f.write(f"TEARDOWN:::{summary_message}\n")
+    # end create summary.log with setup/test/teardown results for all executed test cases
