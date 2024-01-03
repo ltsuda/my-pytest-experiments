@@ -158,3 +158,17 @@ def pytest_runtest_makereport(item: Item):
 @pytest.fixture(scope="module")
 def module_logger(request) -> my_logger.MyLogger:
     return my_logger.get_logger(request.module.__name__)
+
+
+@pytest.fixture(scope="session")
+def session_logger() -> my_logger.MyLogger:
+    logger = my_logger.get_logger("session")
+    logger.fixture("initialized from session")
+    return logger
+
+
+# experimenting scope narrowing
+@pytest.fixture(scope="function")
+def function_logger(session_logger: my_logger.MyLogger) -> my_logger.MyLogger:
+    session_logger.fixture("initialized from function")
+    return session_logger

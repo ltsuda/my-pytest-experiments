@@ -1,19 +1,30 @@
-import logging
+def test_ui_one(function_logger):
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.debug("hello world")
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.warning("hello world")
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.error("hello world")
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.critical("hello world")
+    assert True
 
-logger = logging.getLogger(__name__)
 
-
-def test_ui_one():
-    logger.info("hello world")
-    logger.info("hello world")
-    logger.debug("hello world")
-    logger.info("hello world")
-    logger.info("hello world")
-    logger.warning("hello world")
-    logger.info("hello world")
-    logger.info("hello world")
-    logger.error("hello world")
-    logger.info("hello world")
-    logger.info("hello world")
-    logger.critical("hello world")
+def test_ui_two(function_logger):
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.debug("hello world")
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.warning("hello world")
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.error("hello world")
+    function_logger.info("hello world")
+    function_logger.info("hello world")
+    function_logger.critical("hello world")
     assert True
