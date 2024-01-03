@@ -1,4 +1,9 @@
-def test_ui_one(logger):
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def test_ui_one():
     logger.info("hello world")
     logger.info("hello world")
     logger.debug("hello world")

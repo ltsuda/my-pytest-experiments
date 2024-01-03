@@ -1,16 +1,12 @@
 import datetime
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 from pytest import Item, Session
 from slugify import slugify
 
 from my_pytest_experiments.my_logger import my_logger
-
-if TYPE_CHECKING:
-    from my_pytest_experiments.my_logger.my_logger import MyLogger
 
 log_fullpath = pytest.StashKey[Path]()
 session_datetime = pytest.StashKey[str]()
@@ -160,5 +156,5 @@ def pytest_runtest_makereport(item: Item):
 
 
 @pytest.fixture(scope="module")
-def module_logger(request) -> MyLogger:
+def module_logger(request) -> my_logger.MyLogger:
     return my_logger.get_logger(request.module.__name__)
